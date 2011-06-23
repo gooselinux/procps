@@ -1,0 +1,126 @@
+diff -up procps-3.2.8/proc/readproc.c.used_mem procps-3.2.8/proc/readproc.c
+--- procps-3.2.8/proc/readproc.c.used_mem	2009-10-08 16:47:25.000000000 +0200
++++ procps-3.2.8/proc/readproc.c	2009-10-08 16:52:56.000000000 +0200
+@@ -478,6 +478,38 @@ static char** file2strvec(const char* di
+     return ret;
+ }
+ 
++static unsigned long file2swap(const char * directory)
++{
++FILE * f;
++unsigned long result = 0;
++#define STRLEN 256
++char buf[STRLEN];
++char filename[STRLEN];
++
++strcpy(filename, directory);
++strcat(filename, "/smaps");
++
++f = fopen(filename, "r");
++if (unlikely(!f))
++    return 0;
++
++while (fgets(buf, sizeof(buf), f))
++{
++    if (strstr(buf, "Swap:"))
++    {
++        char * ptr = buf;
++
++	ptr += 5; /*strlen("Swap:")*/
++	result += strtoul(ptr, NULL, 10);
++    }
++}
++
++fclose(f);
++return result;
++#undef STRLEN
++}
++
++
+ // warning: interface may change
+ int read_cmdline(char *restrict const dst, unsigned sz, unsigned pid){
+     char name[32];
+@@ -566,6 +598,10 @@ static proc_t* simple_readproc(PROCTAB *
+            status2proc(sbuf, p, 1);
+        }
+     }
++    
++    if (unlikely(flags & PROC_FILLSWAP)) {
++        p->swap = file2swap(path);
++    }
+ 
+     // if multithreaded, some values are crap
+     if(p->nlwp > 1){
+diff -up procps-3.2.8/proc/readproc.h.used_mem procps-3.2.8/proc/readproc.h
+--- procps-3.2.8/proc/readproc.h.used_mem	2006-06-16 10:01:21.000000000 +0200
++++ procps-3.2.8/proc/readproc.h	2009-10-08 16:52:56.000000000 +0200
+@@ -108,7 +108,8 @@ typedef struct proc_t {
+ 	min_flt,	// stat            number of minor page faults since process start
+ 	maj_flt,	// stat            number of major page faults since process start
+ 	cmin_flt,	// stat            cumulative min_flt of process and child processes
+-	cmaj_flt;	// stat            cumulative maj_flt of process and child processes
++	cmaj_flt,	// stat            cumulative maj_flt of process and child processes
++	swap;		// smaps           virtual memory used by the process
+     char
+ 	**environ,	// (special)       environment string vector (/proc/#/environ)
+ 	**cmdline;	// (special)       command line string vector (/proc/#/cmdline)
+@@ -236,6 +237,7 @@ extern proc_t * get_proc_stats(pid_t pid
+ #define PROC_FILLSTAT        0x0040 // read stat -- currently unconditional
+ #define PROC_FILLWCHAN       0x0080 // look up WCHAN name
+ #define PROC_FILLARG         0x0100 // alloc and fill in `cmdline'
++#define PROC_FILLSWAP        0x0200 // fill "swap" field from /proc/[pid]/smaps
+ 
+ #define PROC_LOOSE_TASKS     0x0200 // threat threads as if they were processes
+ 
+diff -up procps-3.2.8/top.c.used_mem procps-3.2.8/top.c
+--- procps-3.2.8/top.c.used_mem	2009-10-08 16:47:25.000000000 +0200
++++ procps-3.2.8/top.c	2009-10-08 16:52:56.000000000 +0200
+@@ -1841,7 +1841,7 @@ static void configs_read (void)
+    if (!Secure_mode) Rc.delay_time = delay;
+ }
+ 
+-
++static int used_instead_of_virt = 0;
+ // Parse command line arguments.
+ // Note: it's assumed that the rc file(s) have already been read
+ //       and our job is to see if any of those options are to be
+@@ -1895,6 +1895,11 @@ static void parse_args (char **args)
+                TOGw(Curwin, Show_IDLEPS);
+                Curwin->rc.maxtasks = 0;
+                break;
++	    case 'm':
++	       Fieldstab[P_VRT].head = "  USED";
++	       Fieldstab[P_VRT].lflg |= PROC_FILLSWAP;
++	       used_instead_of_virt = 1;
++	       break;
+             case 'n':
+                if (cp[1]) cp++;
+                else if (*args) cp = *args++;
+@@ -3239,10 +3244,15 @@ static void task_show (const WIN_t *q, c
+             MKCOL(p->ruser);
+             break;
+          case P_VRT:
++	    if (unlikely(used_instead_of_virt))
++	        MKCOL(scale_num(PAGES_TO_KB(p->rss)+p->swap,w,s));
++	    else
++	    {
+  	    if (VIRT_vmsize) 
+ 		    MKCOL(scale_num(PAGES_TO_KB(p->vm_size), w, s));
+  	    else
+ 		    MKCOL(scale_num(PAGES_TO_KB(p->size), w, s));
++	    }    
+             break;
+          case P_WCH:
+             if (No_ksyms) {
+diff -up procps-3.2.8/top.h.used_mem procps-3.2.8/top.h
+--- procps-3.2.8/top.h.used_mem	2009-10-08 16:47:25.000000000 +0200
++++ procps-3.2.8/top.h	2009-10-08 16:52:56.000000000 +0200
+@@ -201,7 +201,7 @@ typedef struct FLD_t {
+    const int     scale;         // scale_num type, if applicable
+    const QFP_t   sort;          // sort function
+    const char   *desc;          // description for toggle/reorder fields
+-   const int     lflg;          // PROC_FILLxxx flag(s) needed by this field
++   int     lflg;          // PROC_FILLxxx flag(s) needed by this field
+ } FLD_t;
+ 
+ // This structure stores one piece of critical 'history'

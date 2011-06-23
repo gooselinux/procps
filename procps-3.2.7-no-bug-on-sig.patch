@@ -1,0 +1,13 @@
+--- procps-3.2.7/ps/display.c	2005-01-06 05:14:37.000000000 +0530
++++ /tmp/procps-3.2.7/ps/display.c	2008-04-08 17:19:20.000000000 +0530
+@@ -45,8 +45,8 @@
+   /* fprintf() is not reentrant, but we _exit() anyway */
+   fprintf(stderr,
+     "\n\n"
+-    "Signal %d (%s) caught by ps (%s).\n"
+-    "Please send bug reports to <feedback@lists.sf.net> or <albert@users.sf.net>\n",
++    "Signal %d (%s) caught by ps (%s).\n",
++    /* "Please send bug reports to <feedback@lists.sf.net> or <albert@users.sf.net>\n", */
+     signo,
+     signal_number_to_name(signo),
+     procps_version

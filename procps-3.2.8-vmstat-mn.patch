@@ -1,0 +1,69 @@
+diff -up procps-3.2.8/vmstat.8.vmstatmn procps-3.2.8/vmstat.8
+--- procps-3.2.8/vmstat.8.vmstatmn	2010-01-13 11:35:16.000000000 +0100
++++ procps-3.2.8/vmstat.8	2010-01-13 11:37:52.000000000 +0100
+@@ -9,21 +9,31 @@ vmstat \- Report virtual memory statisti
+ .RB [ "\-a" ]
+ .RB [ "\-n" ]
+ .RB [ "\-t" ]
++.RB [ "\-S unit"]
+ .RI [ delay " [ " count ]]
+ .br
+ .B vmstat
+-.RB [ "\-f" ]
+ .RB [ "\-s" ]
+-.RB [ "\-m" ]
++.RB [ "\-n" ]
++.RB [ "\-S unit"]
+ .br
+ .B vmstat
+-.RB [ "\-S unit"]
++.RB [ "\-m" ]
++.RB [ "\-n" ]
++.RI [ delay " [ " count ]]
+ .br
+ .B vmstat
+-.RB [ "\-d"]
++.RB [ "\-d" ]
++.RB [ "\-n" ]
++.RI [ delay " [ " count ]]
+ .br
+ .B vmstat
+ .RB [ "\-p disk partition"]
++.RB [ "\-n" ]
++.RI [ delay " [ " count ]]
++.br
++.B vmstat
++.RB [ "\-f"]
+ .br
+ .B vmstat
+ .RB [ "\-V" ]
+diff -up procps-3.2.8/vmstat.c.vmstatmn procps-3.2.8/vmstat.c
+--- procps-3.2.8/vmstat.c.vmstatmn	2010-01-13 11:35:16.000000000 +0100
++++ procps-3.2.8/vmstat.c	2010-01-13 11:37:52.000000000 +0100
+@@ -378,11 +378,13 @@ static void diskformat(void){
+   struct partition_stat *partitions;
+   unsigned long ndisks,i,j,k;
+   const char format[]="%-5s %6u %6u %7llu %7u %6u %6u %7llu %7u %6u %6u\n";
++
++  diskheader();
+   if ((fDiskstat=fopen("/proc/diskstats", "rb"))){
+     fclose(fDiskstat);
+     ndisks=getdiskstat(&disks,&partitions);
+     for(k=0; k<ndisks; k++){
+-      if (moreheaders && ((k%height)==0)) diskheader();
++      if (moreheaders && (((k+1)%height)==0)) diskheader();
+       printf(format,
+         disks[k].disk_name,
+         disks[k].reads,
+@@ -451,9 +453,10 @@ static void slabformat (void){
+     return;
+   }
+ 
++  slabheader();
+   nSlab = getslabinfo(&slabs);
+   for(k=0; k<nSlab; k++){
+-    if (moreheaders && ((k%height)==0)) slabheader();
++    if (moreheaders && (((k+1)%height)==0)) slabheader();
+     printf(format,
+       slabs[k].name,
+       slabs[k].active_objs,

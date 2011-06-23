@@ -1,0 +1,32 @@
+diff -up procps-3.2.8/pmap.1.pmap procps-3.2.8/pmap.1
+--- procps-3.2.8/pmap.1.pmap	2010-06-01 15:40:36.601770071 +0200
++++ procps-3.2.8/pmap.1	2010-06-01 16:06:35.404894251 +0200
+@@ -5,7 +5,7 @@
+ .\" Licensed under version 2 of the GNU General Public License.
+ .\" Written by Albert Cahalan.
+ .\"
+-.TH PMAP 1 "October 26, 2002" "Linux" "Linux User's Manual"
++.TH PMAP 1 "June 1, 2010" "Linux" "Linux User's Manual"
+ .SH NAME
+ pmap \- report memory map of a process
+ 
+@@ -27,6 +27,19 @@ l l l.
+ -V	show version	Displays version of program.
+ .TE
+ 
++.SH "EXTENDED AND DEVICE FORMAT FIELDS"
++.TS
++l l.
++Address:	start address of map
++Kbytes:	size of map in kilobytes
++RSS:	resident set size in kilobytes
++Dirty:	dirty pages (both shared and private) in kilobytes
++Mode:	permissions on map: read, write, execute, shared, private (copy on write)
++Mapping:	file backing the map, or '[ anon ]' for allocated memory, or  '[ stack ]' for the program stack
++Offset:	offset into the file
++Device:	device name (major:minor)
++.TE
++
+ .SH "SEE ALSO"
+ ps(1) pgrep(1)
+ 

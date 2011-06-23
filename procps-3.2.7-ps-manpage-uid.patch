@@ -1,0 +1,12 @@
+diff -up procps-3.2.7/ps/ps.1.columns procps-3.2.7/ps/ps.1
+--- procps-3.2.7/ps/ps.1.columns	2009-01-21 13:44:29.000000000 +0100
++++ procps-3.2.7/ps/ps.1	2009-01-21 13:49:19.000000000 +0100
+@@ -681,6 +681,8 @@ Processes marked <defunct> are dead proc
+ remain because their parent has not destroyed them properly. These processes
+ will be destroyed by \fIinit\fR(8) if the parent process exits.
+ 
++If the length of the username is greater than the length of
++the display column, the numeric user ID is displayed instead.
+ 
+ .SH "PROCESS FLAGS"
+ The sum of these values is displayed in the "F" column,

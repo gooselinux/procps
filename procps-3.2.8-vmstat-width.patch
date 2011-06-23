@@ -1,0 +1,82 @@
+diff -up procps-3.2.8/vmstat.c.width procps-3.2.8/vmstat.c
+--- procps-3.2.8/vmstat.c.width	2010-04-20 13:10:11.000000000 +0200
++++ procps-3.2.8/vmstat.c	2010-04-20 13:16:49.000000000 +0200
+@@ -51,6 +51,7 @@ static int statMode=VMSTAT;
+ #define TRUE 1
+ 
+ static int a_option; /* "-a" means "show active/inactive" */
++static int w_option;
+ 
+ static unsigned sleep_time = 1;
+ static unsigned long num_updates;
+@@ -153,13 +154,24 @@ static int format_1000(unsigned long lon
+ ////////////////////////////////////////////////////////////////////////////
+ 
+ static void new_header(void){
++  const char format[] = 
++     "%2s %2s %6s %6s %6s %6s %4s %4s %5s %5s %4s %4s %2s %2s %2s %2s %2s\n";
++  const char wide_format[] =
++     "%2s %2s %10s %10s %10s %10s %4s %4s %5s %5s %4s %4s  %2s %2s %3s %2s %2s\n";
++  const char * f = format;
++
++  if(w_option) 
++  {
++  f = wide_format;
++  printf("procs -------------------memory------------------ ---swap-- -----io---- --system-- -----cpu-------\n");
++  } else
+   if(!showtimestamp){
+      printf("procs -----------memory---------- ---swap-- -----io---- --system-- -----cpu-----\n");
+   } else {
+      printf("procs -----------memory---------- ---swap-- -----io---- --system-- -----cpu------ ---timestamp---\n");
+   }
+   printf(
+-    "%2s %2s %6s %6s %6s %6s %4s %4s %5s %5s %4s %4s %2s %2s %2s %2s %2s\n",
++    f,
+     "r","b",
+     "swpd", "free", a_option?"inact":"buff", a_option?"active":"cache",
+     "si","so",
+@@ -181,6 +193,7 @@ static unsigned long unitConvert(unsigne
+ 
+ static void new_format(void) {
+   const char format[]="%2u %2u %6lu %6lu %6lu %6lu %4u %4u %5u %5u %4u %4u %2u %2u %2u %2u %2u\t%s\n";
++  const char wide_format[]="%2u %2u %10lu %10lu %10lu %10lu %4u %4u %5u %5u %4u %4u  %2u %2u %3u %2u %2u\n";
+   unsigned int tog=0; /* toggle switch for cleaner code */
+   unsigned int i;
+   unsigned int hz = Hertz;
+@@ -196,6 +209,8 @@ static void new_format(void) {
+   time_t the_time;
+   char timebuf[32];
+   timebuf[0] = '\0';
++  const char * f = format;
++  if(w_option) f =  wide_format;
+ 
+   sleep_half=(sleep_time/2);
+   new_header();
+@@ -221,7 +236,7 @@ static void new_format(void) {
+   dstl= *cpu_zzz;
+   Div= duse+dsys+didl+diow+dstl;
+   divo2= Div/2UL;
+-  printf(format,
++  printf(f,
+ 	 running, blocked,
+ 	 unitConvert(kb_swap_used), unitConvert(kb_main_free),
+ 	 unitConvert(a_option?kb_inactive:kb_main_buffers),
+@@ -278,7 +293,7 @@ static void new_format(void) {
+ 
+     Div= duse+dsys+didl+diow+dstl;
+     divo2= Div/2UL;
+-    printf(format,
++    printf(f,
+            running, blocked,
+ 	   unitConvert(kb_swap_used),unitConvert(kb_main_free),
+ 	   unitConvert(a_option?kb_inactive:kb_main_buffers),
+@@ -628,6 +643,9 @@ int main(int argc, char *argv[]) {
+ 	/* active/inactive mode */
+ 	a_option=1;
+         break;
++        case 'w':
++        w_option=1;
++        break;
+       case 'f':
+         // FIXME: check for conflicting args
+ 	fork_format();

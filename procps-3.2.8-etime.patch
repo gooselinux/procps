@@ -1,0 +1,11 @@
+diff -up procps-3.2.3/ps/output.c.etime procps-3.2.3/ps/output.c
+--- procps-3.2.3/ps/output.c.etime	2009-03-19 13:20:17.000000000 +0100
++++ procps-3.2.3/ps/output.c	2009-03-20 11:53:21.000000000 +0100
+@@ -373,6 +373,7 @@ static int pr_etime(char *restrict const
+   unsigned dd,hh,mm,ss;
+   char *cp = outbuf;
+   t = seconds_since_boot - (unsigned long)(pp->start_time / Hertz);
++  if(t>LONG_MAX) t=0;
+   ss = t%60;
+   t /= 60;
+   mm = t%60;

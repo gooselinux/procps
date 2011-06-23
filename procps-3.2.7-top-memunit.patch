@@ -1,0 +1,134 @@
+--- procps-3.2.7/top.h.megs	2007-10-29 14:31:40.000000000 +0100
++++ procps-3.2.7/top.h	2007-10-29 16:34:16.000000000 +0100
+@@ -407,6 +407,23 @@
+ #define MEMORY_line2  "Swap:\03" \
+    " %8luk \02total,\03 %8luk \02used,\03 %8luk \02free,\03 %8luk \02cached\03\n"
+ #endif
++// Enables to specify the units and display as floating point values
++#define MEMORY_line1_alt  "Mem: \03" \
++	" %8.3f%c \02total,\03 %8.3f%c \02used,\03 %8.3f%c \02free,\03 %8.3f%c \02buffers\03\n"
++#define MEMORY_line2_alt  "Swap:\03" \
++	" %8.3f%c \02total,\03 %8.3f%c \02used,\03 %8.3f%c \02free,\03 %8.3f%c \02cached\03\n"
++
++enum mem_display_values {
++   MEM_MAIN_TOTAL = 0,
++   MEM_MAIN_USED,
++   MEM_MAIN_FREE,
++   MEM_BUFFERS,
++   MEM_SWAP_TOTAL,
++   MEM_SWAP_USED,
++   MEM_SWAP_FREE,
++   MEM_CACHED,
++   MEM_DISP_VALUES_NUM
++};
+ 
+ // Keyboard Help specially formatted string(s) --
+ // see 'show_special' for syntax details + other cautions.
+--- procps-3.2.7/top.c.megs	2007-10-29 14:31:34.000000000 +0100
++++ procps-3.2.7/top.c	2007-10-30 08:54:41.000000000 +0100
+@@ -118,7 +118,9 @@
+            PSDBopen = 0,        // set to '1' if psdb opened (now postponed)
+            Batch = 0,           // batch mode, collect no input, dumb output
+            Loops = -1,          // number of iterations, -1 loops forever
+-           Secure_mode = 0;     // set if some functionality restricted
++           Secure_mode = 0,     // set if some functionality restricted
++           Mem_units_detect = 0;// detect memory units (k/M/G) for better 
++                                // human readability
+ 
+ static int VIRT_vmsize = 0;	//use vm_size for VIRT 
+ static int CPU_loop = 0;	// wait for reliable CPU data
+@@ -1843,7 +1845,7 @@
+       .  bunched args are actually handled properly and none are ignored
+       .  we tolerate NO whitespace and NO switches -- maybe too tolerant? */
+    static const char usage[] =
+-      " -hv | -bcisSH -d delay -n iterations [-u user | -U user] -p pid [,pid ...]";
++      " -hv | -bcisSHM -d delay -n iterations [-u user | -U user] -p pid [,pid ...]";
+    float tmp_delay = MAXFLOAT;
+    char *p;
+ 
+@@ -1937,6 +1939,9 @@
+                   cp += snprintf(Curwin->colusrnam, USRNAMSIZ-1, "%s", cp); // FIXME: junk
+                } while(0);
+                break;
++            case 'M':
++               Mem_units_detect = 1;
++               break;
+             default :
+                std_err(fmtmk("unknown argument '%c'\nusage:\t%s%s"
+                   , *cp, Myname, usage));
+@@ -3068,10 +3073,49 @@
+    // Display Memory and Swap stats
+    meminfo();
+    if (CHKw(Curwin, View_MEMORY)) {
+-      show_special(0, fmtmk(MEMORY_line1
+-         , kb_main_total, kb_main_used, kb_main_free, kb_main_buffers));
+-      show_special(0, fmtmk(MEMORY_line2
+-         , kb_swap_total, kb_swap_used, kb_swap_free, kb_main_cached));
++      if (!Mem_units_detect) {
++         show_special(0, fmtmk(MEMORY_line1
++            , kb_main_total, kb_main_used, kb_main_free, kb_main_buffers));
++         show_special(0, fmtmk(MEMORY_line2
++            , kb_swap_total, kb_swap_used, kb_swap_free, kb_main_cached));
++      } else {
++         int i;
++         double disp_values[MEM_DISP_VALUES_NUM];
++         char disp_units[MEM_DISP_VALUES_NUM];
++         
++         disp_values[MEM_MAIN_TOTAL] = (double) kb_main_total;
++         disp_values[MEM_MAIN_USED] = (double) kb_main_used;
++         disp_values[MEM_MAIN_FREE] = (double) kb_main_free;
++         disp_values[MEM_BUFFERS] = (double) kb_main_buffers;
++         disp_values[MEM_SWAP_TOTAL] = (double) kb_swap_total;
++         disp_values[MEM_SWAP_USED] = (double) kb_swap_used;
++         disp_values[MEM_SWAP_FREE] = (double) kb_swap_free;
++         disp_values[MEM_CACHED] = (double) kb_main_cached;
++
++#define DIVISION_TRESHOLD 10000.0
++         for (i = 0; i < MEM_DISP_VALUES_NUM; i++) {
++            disp_units[i] = 'k';
++            if (disp_values[i] > DIVISION_TRESHOLD) {
++               disp_values[i] /= 1024.0;
++               disp_units[i] = 'M';
++            }
++            if (disp_values[i] > DIVISION_TRESHOLD) {
++               disp_values[i] /= 1024.0;
++               disp_units[i] = 'G';
++            }
++         }
++
++         show_special(0, fmtmk(MEMORY_line1_alt,
++            disp_values[MEM_MAIN_TOTAL], disp_units[MEM_MAIN_TOTAL],
++            disp_values[MEM_MAIN_USED], disp_units[MEM_MAIN_USED],
++            disp_values[MEM_MAIN_FREE], disp_units[MEM_MAIN_FREE],
++            disp_values[MEM_BUFFERS], disp_units[MEM_BUFFERS]));
++         show_special(0, fmtmk(MEMORY_line2_alt,
++            disp_values[MEM_SWAP_TOTAL], disp_units[MEM_SWAP_TOTAL],
++            disp_values[MEM_SWAP_USED], disp_units[MEM_SWAP_USED],
++            disp_values[MEM_SWAP_FREE], disp_units[MEM_SWAP_FREE],
++            disp_values[MEM_CACHED], disp_units[MEM_CACHED]));
++      }
+       Msg_row += 2;
+    }
+ 
+--- procps-3.2.7/top.1.megs	2007-10-30 08:38:39.000000000 +0100
++++ procps-3.2.7/top.1	2007-10-30 08:42:43.000000000 +0100
+@@ -213,7 +213,7 @@
+ .\" ----------------------------------------------------------------------
+ The command-line syntax for \*(Me consists of:
+ 
+-     \-\fBhv\fR\ |\ -\fBbcHisS\fR\ \-\fBd\fI\ delay\fR\ \-\fBn\fI\ iterations\
++     \-\fBhv\fR\ |\ -\fBbcHisSM\fR\ \-\fBd\fI\ delay\fR\ \-\fBn\fI\ iterations\
+ \fR\ \-\fBp\fI\ pid\fR\ [,\fIpid\fR...]
+ 
+ The typically mandatory switches ('-') and even whitespace are completely
+@@ -302,6 +302,10 @@
+ \-\fBv\fR :\fB Version\fR
+ Show library version and the usage prompt, then quit.
+ 
++.TP 5
++\-\fBM\fR :\fB Detect memory units\fR
++Show memory units (k/M/G) and display floating point values in the memory
++summary.
+ 
+ .\" ----------------------------------------------------------------------
+ .SH 2. FIELDS / Columns

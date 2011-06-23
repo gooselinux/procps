@@ -1,0 +1,11 @@
+--- procps-3.2.8/proc/readproc.c.doublefree	2010-02-16 13:59:35.000000000 -0500
++++ procps-3.2.8/proc/readproc.c	2010-02-16 14:00:51.000000000 -0500
+@@ -445,7 +445,7 @@ static char** file2strvec(const char* di
+ 	    close(fd);
+ 	    return NULL;	/* read error */
+ 	}
+-	if (end_of_file && buf[n-1])		/* last read char not null */
++	if (end_of_file && (n == 0 || buf[n-1]))/* last read char not null */
+ 	    buf[n++] = '\0';			/* so append null-terminator */
+ 	rbuf = xrealloc(rbuf, tot + n);		/* allocate more memory */
+ 	memcpy(rbuf + tot, buf, n);		/* copy buffer into it */

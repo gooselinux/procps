@@ -1,0 +1,12 @@
+diff -up procps-3.2.8/proc/sysinfo.c.devlen procps-3.2.8/proc/sysinfo.c
+--- procps-3.2.8/proc/sysinfo.c.devlen	2010-05-27 11:58:09.000000000 +0200
++++ procps-3.2.8/proc/sysinfo.c	2010-05-28 15:48:06.133769051 +0200
+@@ -837,7 +837,7 @@ unsigned int getdiskstat(struct disk_sta
+       fclose(fd);
+       break;
+     }
+-    fields = sscanf(buff, " %*d %*d %15s %*u %*u %*u %*u %*u %*u %*u %*u %*u %*u %u",
++    fields = sscanf(buff, " %*d %*d %32s %*u %*u %*u %*u %*u %*u %*u %*u %*u %*u %u",
+             &devname, &dummy);
+     if (fields == 2 && is_disk(devname)){
+       (*disks) = realloc(*disks, (cDisk+1)*sizeof(struct disk_stat));

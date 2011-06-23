@@ -1,0 +1,14 @@
+diff --git a/top.c b/top.c
+index 6d4a7cc..5ae842b 100644
+--- a/top.c
++++ b/top.c
+@@ -3081,6 +3081,9 @@ static void task_show (const WIN_t *q, const proc_t *p)
+             break;
+          case P_CPU:
+          {  float u = (float)p->pcpu * Frame_tscale;
++            // Process can't use more CPUs than number of threads it has
++            if (p->nlwp >= 1 && u > 100.0 * p->nlwp)
++                u = 100.0 * p->nlwp;
+             if (u > pcpu_max_value) u = pcpu_max_value;
+             MKCOL(u);
+          }

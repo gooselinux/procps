@@ -1,0 +1,12 @@
+diff -up procps-3.2.7/vmstat.8.width procps-3.2.7/vmstat.8
+--- procps-3.2.7/vmstat.8.width	2009-11-19 13:31:28.000000000 +0100
++++ procps-3.2.7/vmstat.8	2009-11-19 13:32:43.000000000 +0100
+@@ -70,6 +70,8 @@ defined, \fIcount\fP defaults to infinit
+ .PP
+ The \fB-d\fP reports disk statistics (2.5.70 or above required) 
+ .PP
++The \fB-w\fP enlarges field width for big memory sizes
++.PP
+ The \fB-p\fP followed by some partition name for detailed statistics (2.5.70 or above required) 
+ .PP
+ The \fB-S\fP followed by k or K or m or M switches outputs between 1000, 1024, 1000000, or 1048576 bytes 
